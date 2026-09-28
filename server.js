@@ -93,8 +93,9 @@ app.post('/api/signup',(q,r)=>{
    user:u,
    account:acct(id)
   });
- }catch(e){
-  r.status(409).json({error:'Email already registered'});
+  }catch(e){
+  console.error('SIGNUP ERROR:', e);
+  r.status(500).json({error:e.message});
  }
 });
 
