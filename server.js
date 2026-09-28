@@ -254,6 +254,6 @@ app.get('*',(q,r)=>{
  r.sendFile(path.join(__dirname,'public/index.html'));
 });
 
-app.listen(PORT,()=>{
+app.listen(PORT,'0.0.0.0',()=>{
  console.log('PulseAI v5 running on port '+PORT);
 });
