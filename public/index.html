@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PulseAI Trading</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#070b12;
+ color:#eef3ff;
+}
+.wrap{max-width:1050px;margin:auto;padding:20px}
+.card{
+ background:#101722;
+ border:1px solid #202b3b;
+ border-radius:18px;
+ padding:20px;
+ margin-bottom:16px;
+ box-shadow:0 8px 30px #0005;
+}
+h1,h2,h3{margin-top:0}
+.logo{font-size:30px;font-weight:800;color:#fff}
+.logo span{color:#4c9aff}
+.sub{color:#8d9aaf}
+input,select,button{
+ width:100%;
+ padding:13px;
+ margin:7px 0;
+ border-radius:10px;
+ border:1px solid #2a374b;
+ background:#0b111b;
+ color:white;
+ font-size:15px;
+}
+button{
+ background:#246bff;
+ border:0;
+ font-weight:700;
+ cursor:pointer;
+}
+button.secondary{background:#263244}
+button.danger{background:#b83245}
+.hidden{display:none}
+.grid{
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:14px;
+}
+.stat{
+ padding:16px;
+ background:#0b111b;
+ border-radius:14px;
+ border:1px solid #202b3b;
+}
+.value{font-size:25px;font-weight:800;margin-top:5px}
+.label{color:#8996aa;font-size:13px}
+.good{color:#39d98a}
+.bad{color:#ff667d}
+.warn{color:#ffc857}
+.center{max-width:430px;margin:50px auto}
+.top{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ margin-bottom:20px;
+}
+.actions{display:flex;gap:8px}
+.actions button{width:auto;padding:10px 15px}
+.market{
+ font-size:28px;
+ font-weight:800;
+}
+.small{font-size:13px;color:#8793a7}
+@media(max-width:700px){
+ .grid{grid-template-columns:1fr}
+ .top{align-items:flex-start}
+ .actions{flex-direction:column}
+}
+</style>
+</head>
+
+<body>
+
+<div id="auth" class="wrap">
+ <div class="card center">
+  <div class="logo">Pulse<span>AI</span></div>
+  <p class="sub">AI-powered multi-user paper trading platform</p>
+
+  <div id="loginBox">
+   <h2>Login</h2>
+   <input id="loginEmail" type="email" placeholder="Email">
+   <input id="loginPassword" type="password" placeholder="Password">
+   <button onclick="login()">Login</button>
+   <button class="secondary" onclick="showSignup()">Create account</button>
+  </div>
+
+  <div id="signupBox" class="hidden">
+   <h2>Create Account</h2>
+   <input id="name" placeholder="Name">
+   <input id="email" type="email" placeholder="Email">
+   <input id="password" type="password" placeholder="Password (8+ characters)">
+   <button onclick="signup()">Create Account</button>
+   <button class="secondary" onclick="showLogin()">Back to Login</button>
+  </div>
+
+  <p id="authMsg" class="small"></p>
+ </div>
+</div>
+
+<div id="app" class="wrap hidden">
+
+ <div class="top">
+  <div>
+   <div class="logo">Pulse<span>AI</span></div>
+   <div class="small" id="welcome"></div>
+  </div>
+  <div class="actions">
+   <button class="secondary" onclick="refresh()">Refresh</button>
+   <button class="danger" onclick="logout()">Logout</button>
+  </div>
+ </div>
+
+ <div class="card">
+  <h2>Paper Trading</h2>
+
+  <div class="grid">
+   <div>
+    <label>Symbol</label>
+    <select id="symbol">
+     <option>BTCUSDT</option>
+     <option>ETHUSDT</option>
+     <option>BNBUSDT</option>
+     <option>SOLUSDT</option>
+    </select>
+   </div>
+
+   <div>
+    <label>Market Price</label>
+    <div class="market" id="price">$--</div>
+   </div>
+  </div>
+ </div>
+
+ <div class="grid">
+  <div class="stat">
+   <div class="label">Cash</div>
+   <div class="value" id="cash">$0</div>
+  </div>
+
+  <div class="stat">
+   <div class="label">Realized P&L</div>
+   <div class="value" id="realized">$0</div>
+  </div>
+
+  <div class="stat">
+   <div class="label">Daily Loss</div>
+   <div class="value" id="dailyLoss">$0</div>
+  </div>
+
+  <div class="stat">
+   <div class="label">Auto Trade</div>
+   <div class="value" id="autoTrade">ON</div>
+  </div>
+ </div>
+
+ <div class="card">
+  <h3>Trading Controls</h3>
+
+  <div class="grid">
+   <div>
+    <label>Risk %</label>
+    <input id="risk" type="number" step="0.1" min="0.1" max="10">
+   </div>
+
+   <div>
+    <label>Stop Loss %</label>
+    <input id="sl" type="number" step="0.1">
+   </div>
+
+   <div>
+    <label>Take Profit %</label>
+    <input id="tp" type="number" step="0.1">
+   </div>
+
+   <div>
+    <label>Minimum AI Score</label>
+    <input id="minScore" type="number" min="1" max="100">
+   </div>
+  </div>
+
+  <button onclick="saveSettings()">Save Settings</button>
+ </div>
+
+ <div class="card">
+  <h3>Current Position</h3>
+  <div id="position">No open position</div>
+
+  <div class="grid" style="margin-top:10px">
+   <button onclick="openPaper('LONG')">Open LONG</button>
+   <button onclick="openPaper('SHORT')">Open SHORT</button>
+  </div>
+
+  <button class="danger" onclick="closePaper()">Close Position</button>
+ </div>
+
+ <div class="card">
+  <h3>AI Market Engine</h3>
+  <div id="marketState" class="value">Loading...</div>
+  <p class="small">
+   Market data and paper-trading controls are displayed here.
+   Auto-trading only acts when configured conditions are satisfied.
+  </p>
+ </div>
+
+ <div class="card">
+  <h3>Recent Trades</h3>
+  <div id="trades">Loading...</div>
+ </div>
+
+ <div class="card">
+  <button class="danger" onclick="resetAccount()">Reset Paper Account</button>
+ </div>
+
+</div>
+
+<script>
+const API='';
+let token=localStorage.getItem('pulse_token');
+let currentPrice=0;
+
+function $(id){return document.getElementById(id)}
+
+function msg(t){
+ $('authMsg').textContent=t;
+}
+
+function showSignup(){
+ $('loginBox').classList.add('hidden');
+ $('signupBox').classList.remove('hidden');
+ msg('');
+}
+
+function showLogin(){
+ $('signupBox').classList.add('hidden');
+ $('loginBox').classList.remove('hidden');
+ msg('');
+}
+
+async function request(url,options={}){
+ options.headers=Object.assign(
+  {'Content-Type':'application/json'},
+  options.headers||{}
+ );
+
+ if(token) options.headers.Authorization='Bearer '+token;
+
+ let r=await fetch(API+url,options);
+ let data=await r.json().catch(()=>({}));
+
+ if(!r.ok) throw new Error(data.error||'Request failed');
+
+ return data;
+}
+
+async function signup(){
+ try{
+  let data=await request('/api/signup',{
+   method:'POST',
+   body:JSON.stringify({
+    name:$('name').value,
+    email:$('email').value,
+    password:$('password').value
+   })
+  });
+
+  token=data.token;
+  localStorage.setItem('pulse_token',token);
+  openApp();
+ }catch(e){
+  msg(e.message);
+ }
+}
+
+async function login(){
+ try{
+  let data=await request('/api/login',{
+   method:'POST',
+   body:JSON.stringify({
+    email:$('loginEmail').value,
+    password:$('loginPassword').value
+   })
+  });
+
+  token=data.token;
+  localStorage.setItem('pulse_token',token);
+  openApp();
+ }catch(e){
+  msg(e.message);
+ }
+}
+
+async function openApp(){
+ $('auth').classList.add('hidden');
+ $('app').classList.remove('hidden');
+
+ try{
+  let data=await request('/api/me');
+
+  $('welcome').textContent='Welcome, '+data.user.name;
+
+  updateAccount(data.account);
+  updatePosition(data.position);
+  await loadTrades();
+  await loadPrice();
+
+ }catch(e){
+  logout();
+ }
+}
+
+function updateAccount(a){
+ if(!a)return;
+
+ $('cash').textContent='$'+Number(a.cash).toFixed(2);
+ $('realized').textContent='$'+Number(a.realized).toFixed(2);
+ $('dailyLoss').textContent='$'+Number(a.daily_loss).toFixed(2);
+ $('autoTrade').textContent=a.auto_trade?'ON':'OFF';
+
+ $('risk').value=a.risk;
+ $('sl').value=a.sl;
+ $('tp').value=a.tp;
+ $('minScore').value=a.min_score;
+}
+
+function updatePosition(p){
+ if(!p){
+  $('position').innerHTML='<span class="small">No open position</span>';
+  return;
+ }
+
+ $('position').innerHTML=
+  '<b>'+p.side+'</b> '+p.symbol+
+  '<br>Entry: $'+Number(p.entry).toFixed(2)+
+  '<br>Quantity: '+Number(p.qty).toFixed(6);
+}
+
+async function refresh(){
+ try{
+  let data=await request('/api/me');
+  updateAccount(data.account);
+  updatePosition(data.position);
+  await loadTrades();
+  await loadPrice();
+ }catch(e){
+  alert(e.message);
+ }
+}
+
+async function saveSettings(){
+ try{
+  let data=await request('/api/settings',{
+   method:'POST',
+   body:JSON.stringify({
+    auto_trade:$('autoTrade').textContent==='ON',
+    risk:Number($('risk').value),
+    sl:Number($('sl').value),
+    tp:Number($('tp').value),
+    min_score:Number($('minScore').value)
+   })
+  });
+
+  updateAccount(data.account);
+  alert('Settings saved');
+ }catch(e){
+  alert(e.message);
+ }
+}
+
+async function loadPrice(){
+ try{
+  let symbol=$('symbol').value;
+  let r=await fetch(
+   'https://data-api.binance.vision/api/v3/ticker/price?symbol='+symbol
+  );
+  let d=await r.json();
+
+  currentPrice=Number(d.price);
+
+  $('price').textContent='$'+currentPrice.toLocaleString(
+   undefined,
+   {maximumFractionDigits:2}
+  );
+
+  $('marketState').textContent='LIVE MARKET';
+ }catch(e){
+  $('price').textContent='$--';
+  $('marketState').textContent='MARKET DATA UNAVAILABLE';
+ }
+}
+
+async function openPaper(side){
+ if(!currentPrice){
+  await loadPrice();
+ }
+
+ if(!currentPrice){
+  alert('Market price unavailable');
+  return;
+ }
+
+ try{
+  let data=await request('/api/paper/open',{
+   method:'POST',
+   body:JSON.stringify({
+    symbol:$('symbol').value,
+    side:side,
+    price:currentPrice
+   })
+  });
+
+  updateAccount(data.account);
+  updatePosition(data.position);
+  alert(side+' position opened');
+ }catch(e){
+  alert(e.message);
+ }
+}
+
+async function closePaper(){
+ if(!currentPrice) await loadPrice();
+
+ try{
+  let data=await request('/api/paper/close',{
+   method:'POST',
+   body:JSON.stringify({
+    price:currentPrice,
+    reason:'Manual close'
+   })
+  });
+
+  updateAccount(data.account);
+  updatePosition(null);
+  await loadTrades();
+  alert('Position closed');
+ }catch(e){
+  alert(e.message);
+ }
+}
+
+async function loadTrades(){
+ try{
+  let data=await request('/api/trades');
+
+  if(!data.trades.length){
+   $('trades').innerHTML='<span class="small">No trades yet</span>';
+   return;
+  }
+
+  $('trades').innerHTML=data.trades.map(t=>
+   '<div class="stat" style="margin-bottom:8px">'+
+   '<b>'+t.side+' '+t.symbol+'</b><br>'+
+   'Entry: $'+Number(t.entry).toFixed(2)+
+   ' → Exit: $'+Number(t.exit).toFixed(2)+
+   '<br>P&L: <span class="'+
+   (t.pnl>=0?'good':'bad')+
+   '">$'+Number(t.pnl).toFixed(2)+'</span>'+
+   '</div>'
+  ).join('');
+ }catch(e){
+  $('trades').textContent=e.message;
+ }
+}
+
+async function resetAccount(){
+ if(!confirm('Reset your paper account to $1000?'))return;
+
+ try{
+  let data=await request('/api/reset',{method:'POST'});
+  updateAccount(data.account);
+  updatePosition(null);
+  await loadTrades();
+ }catch(e){
+  alert(e.message);
+ }
+}
+
+function logout(){
+ token=null;
+ localStorage.removeItem('pulse_token');
+ $('app').classList.add('hidden');
+ $('auth').classList.remove('hidden');
+ showLogin();
+}
+
+$('symbol').addEventListener('change',loadPrice);
+
+if(token) openApp();
+</script>
+
+</body>
+</html>
